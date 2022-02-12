@@ -1,3 +1,4 @@
+#pragma warning(disable:4996)
 #include <Windows.h>
 #include <cstdio>
 #include <cstdlib>
@@ -117,6 +118,7 @@ bool PullUpProcessExe(const string& exeFullPath)
 		CloseHandle(pi.hProcess);
 		CloseHandle(pi.hThread);
 	}
+	return ret;
 }
 
 struct ExeInfo
@@ -132,19 +134,51 @@ vector<ExeInfo> InitConcernedExeInfo(const string& cfgFile)
 	vector<ExeInfo> exeInfo;
 
 	FILE* file;
-	file = fopen(cfgFile.c_str(), "r");
+	fopen_s(&file, cfgFile.c_str(), "r");
 	if (!file)
 	{
 		return exeInfo;
 	}
 	while (!feof(file))
 	{
-		char name[100] = { '\0' }, path[1024] = { '\0' };
-		int num = fscanf(file, "%s,%s\n", &name, &path);
-		if (num <= 0 || name[0] == '%')
+		char tokenStr[2048] = { '\0' };
+		int num = fscanf(file, "%[^\n]%*c", &tokenStr);
+		if (num <= 0 || tokenStr[0] == '%')
 		{
 			continue;
 		}
+		char name[100] = { '\0' }, path[1024] = { '\0' };
+		sscanf(tokenStr, "%[^','],%[^\n]%*c", &name,&path);
+
+		//char name[100] = { '\0' }, path[1024] = { '\0' };
+		//int num = fscanf(file, "%s,%s", &name, &path);
+		//if (num <= 0 || name[0] == '%')
+		//{
+		//	continue;
+		//}
+
 		exeInfo.emplace_back(name, path);
 	}
+	return exeInfo;
+}
+
+void AutoPullUpProcess()
+{
+	string cfgFile("PullUpExe.cfg");
+	auto exeInfoVec = InitConcernedExeInfo(cfgFile);
+	auto processInfoVec = GetProcessInfo();
+	for (auto exeInfo : exeInfoVec)
+	{
+		if (CheckProcessExistence(processInfoVec, exeInfo.exeName))
+		{
+			continue;
+		}
+		PullUpProcessExe(exeInfo.exeFullPath);
+	}
+}
+
+int main()
+{
+	AutoPullUpProcess();
+	return 0;
 }
