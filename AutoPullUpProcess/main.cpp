@@ -148,16 +148,10 @@ vector<ExeInfo> InitConcernedExeInfo(const string& cfgFile)
 			continue;
 		}
 		char name[100] = { '\0' }, path[1024] = { '\0' };
-		sscanf(tokenStr, "%[^','],%[^\n]%*c", &name,&path);
-
-		//char name[100] = { '\0' }, path[1024] = { '\0' };
-		//int num = fscanf(file, "%s,%s", &name, &path);
-		//if (num <= 0 || name[0] == '%')
-		//{
-		//	continue;
-		//}
-
-		exeInfo.emplace_back(name, path);
+		if (sscanf(tokenStr, "%[^','],%[^\n]%*c", &name, &path) > 1)
+		{
+			exeInfo.emplace_back(name, path);
+		}
 	}
 	return exeInfo;
 }
